@@ -1,9 +1,8 @@
 from json import JSONEncoder
 
-from flask import Flask, render_template, request, redirect, session, url_for, escape ,jsonify
+from flask import Flask, session
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import func
 
 from flask_login import LoginManager
 
@@ -84,7 +83,7 @@ def validation(field, Type):
 	return True
 
 # response model
-def gResponse(Type='noLink', status=True, message='', link=''): 
+def gResponse(Type='noLink', status=True, message='', link='', data=None): 
 	""" global response model with two types:
 		- with link
 		- no link
@@ -107,10 +106,22 @@ def gResponse(Type='noLink', status=True, message='', link=''):
 	else:
 		status = 'error'
 	
+	
+	result = {"status": status}
+
+	if data:
+		result['data'] = data
+
+	if message:
+		result['message'] = message
+
 	if Type == 'noLink':
-		return {"status": status, 'message': message}
+		return result
+	
 	elif Type == 'withLink':
-		return {"status": status, 'link': link}
+		result['link'] = link
+		return result
+	
 	else:
 		raise KeyError("not valid parameter 'Type' .")
 

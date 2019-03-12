@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash
 
 from . import auth
 from .. import validation, gResponse, db
-from ..models import User
+from ..models import User, Permission
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
@@ -103,3 +103,11 @@ def registration():
 	# success
 	message = 'you are successfully registered'
 	return jsonify(gResponse(message=message))
+
+@auth.route('/permissions')
+def permissions():
+	
+	permissions = Permission.query.all()
+
+	# success
+	return jsonify(gResponse(data=permissions))
