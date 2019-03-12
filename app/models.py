@@ -1,40 +1,38 @@
-from . import db
+from . import db, login_manager
+import datetime
+from flask_login import UserMixin
+from . import login_manager
+from werkzeug.security import check_password_hash
 
+# user loader .. used py Flask-Login
+@login_manager.user_loader
+def load_user(user_id):
+	return User.query.get(int(user_id))
 
-class User(db.Model):
+class User(UserMixin, db.Model):
 	__tablename__ = 'user'
 	id = db.Column(db.Integer, primary_key=True)
 	email = db.Column(db.String(80), nullable=False, unique=True)
 	password = db.Column(db.TEXT, nullable=False)
 	name = db.Column(db.String(80), nullable=False)
 	
-	# 0 - admin  / 1 - register / 2 - "منسق" / 3 - cs / 4 - it / 5 - is / 6 - boss/
-	permission = db.Column(db.Integer , nullable=False)
+	permission = db.Column(db.Integer, db.ForeignKey('permission.id'))
 
 	# 0 - active / 1 - wait for acceptance or confirm / 2 - Blocked / 3 - deleted
 	status = db.Column(db.Integer, nullable=False, default=0)
 
 	def to_json(self):
-		if permission == 1:
-			p = "مسجل" 
-		elif permission == 2:
-			p = 'منسق' 
-		elif permission == 3:
-			p = 'رئيس قسم علوم'
-		elif permission == 4:
-			p = 'رئيس قسم  تقنية'
-		elif permission == 5:
-			p = 'رئيس قسم نظم'
-		elif permission == 6:
-			p = "عميد الكلية"
-
+		p = Permission.query.get(self.permission).name
 		return {'name':self.name, 'email': self.email, 'permission':p}
+	
+	def checkPassword(self, password):
+		return check_password_hash(self.password, password)
 
-class Request(db.Model): # need modifcation
+class Request(db.Model):
 	__tablename__ = 'request'
 	id = db.Column(db.Integer, primary_key=True)
 	requestID = db.Column(db.TEXT)
-	date = db.Column(db.DATE, nullable=False) # add default value 'now'
+	date = db.Column(db.DATE, nullable=False, default=datetime.datetime.utcnow)
 	
 	# 0 -  / 1 -  / 2 -  / 3 - 
 	status = db.Column(db.Integer, nullable=False, default=0)
@@ -162,10 +160,20 @@ class Degree(db.Model):
 	name = db.Column(db.String(80), nullable=False)
 
 	def to_json(self):
-		return name
+		return self.name
 
+class Permission(db.Model):
+	__tablename__ = 'permission'
+	id = db.Column(db.Integer, primary_key=True)
+	name = db.Column(db.String(80), nullable=False, unique=True, index=True)
+	users = db.relationship("User")
 
+	def to_json(self):
+		return {'id':self.id, 'name':self.name}
+		
+'''
 if __name__ == "__main__":
+	
 	while True:		
 		sure = input(
 			"""are you sure you want to drop all the tables before create the tables again ?.\nyou will lose all data (y/n):  """)
@@ -179,7 +187,13 @@ if __name__ == "__main__":
 			# create all tables
 			db.create_all()
 
+			admin = Permission(name='admin')
+			db.session.add(admin)
+			db.session.commit()
+
 		else:
 			break
 
 		break
+
+'''
